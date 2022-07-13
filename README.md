@@ -1,2 +1,2 @@
-# gmail_auto_classification
+# MyMail
  auto classification by filter via python
