@@ -1,101 +1,71 @@
-import os.path
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from googleapiclient import errors
-from email.message import EmailMessage
-import base64
+from datetime import datetime
+import os
+import gc
+import traceback
+import numpy as np
+import pandas as pd
+from time import sleep, time
 
-def gmail_authenticate():
-    SCOPES = ['https://mail.google.com/']
-    creds = None
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
-    return build('gmail', 'v1', credentials=creds)
-
-def get_label_list(service):
-    results = service.users().labels().list(userId='me').execute()
-    return results.get('labels', [])
-
+from modules import *
 
 
 def main():
-    service = gmail_authenticate()
+    mail_count = 0
+    log = None
+    webServer = None
+    service = None
 
-    # request a list of all the labels
-    labellist = get_label_list(service)
+    try:
+        # initialize settings class
+        start_time = time()
+        setting = init_settings()
+        if setting is None:
+            exit()
 
-    if not labellist:
-        print('No labels found.')
-        return
-    print('Labels:')
-    
-    for label in labellist:
-        print(label['name'])
+        log = setting.logger
+        webServer = setting.webserver
+        service = setting.oauth
 
-    # request a list of all the messages
-    result = service.users().messages().list(maxResults=500, userId='me').execute()
-  
-    messages = result.get('messages')
+        if webServer:
+            log.info('Start local web server.')
 
-    if os.path.exists('result.txt'):
-        os.remove('result.txt')
+        # initialize get class
+        getter = init_getter(log, service)
 
-    f = open('result.txt', 'a', encoding="UTF-8-sig")
-    last_msg_datetime = None
-  
+        if getter.labellist is None:
+            log.info('No labels found.')
+            webServer.server_close()
+            exit()
 
-    while(1):
-        if last_msg_datetime is None:
-            query = "before: {0} after: {1}".format(today.strftime('%Y/%m/%d'),
-                                            yesterday.strftime('%Y/%m/%d'))
-        # iterate through all the messages
-        for idx, msg in enumerate(messages):
-            # Get the message from its id
-            txt = service.users().messages().get(userId='me', id=msg['id']).execute()
-    
-            # Use try-except to avoid any Errors
-            try:
-                # Get value of 'payload' from dictionary 'txt'
-                payload = txt['payload']
-                labels = txt['labelIds']
-                headers = payload['headers']
-    
-                # Look for Subject and Sender Email in the headers
-                for d in headers:
-                    if d['name'] == 'Subject':
-                        subject = d['value']
-                    if d['name'] == 'From':
-                        sender = d['value']
-                
-                # check label name
-                labelnames = []
-            
-                for l in labels:
-                    for label in labellist:
-                        if label['id'] == l:
-                            labelnames.append(label['name'])
-                            break
-    
-                # Printing the subject, sender's email and message
-                text = f'[{idx}] DateTime: {subject}, From: {sender}, Labels:{labelnames}\n'
-                print(text)
-                f.write(text)
+        if getter.filters is None:
+            log.info('No filters found.')
+            webServer.server_close()
+            exit()
 
-            except:
-                f.close()
-                pass
-   
-    f.close()
+        while(1):
+            if getter.mail_info() == False:
+                break
+
+            mail_count = getter.mail_count
+            # collect garbage
+            sleep(0.1)
+            gc.collect()
+
+    except:
+        log.error('An Error is occurred. Stop running.')
+        log.error(traceback.print_exc())
+        webServer.server_close()
+
+    # close web server
+    webServer.server_close()
+    end_time = time()
+    diff = end_time - start_time
+    elapsed = setting.time_convert(diff)
+    log.info('Finished. Total mail count : {}, Total elapsed : {}'.format(mail_count, elapsed))
+
+    # export result and counts per 'from' e-mail address
+    getter.export()
+
 
 if __name__ == '__main__':
     main()
