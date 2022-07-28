@@ -270,7 +270,7 @@ class init_getter:
                 # save count per 'from' whuch sender email sent to excel
                 grp_cols = ['from', 'domain', 'filtered']
                 grp_by_sent = result.groupby(grp_cols, as_index=False)[grp_cols]
-                grp_count = grp_by_sent.value_counts().sort_values(['domain', 'count'], ascending=False)
+                grp_count = grp_by_sent.value_counts().sort_values(['count', 'domain', ], ascending=False)
 
                 if os.path.exists(self.COUNTS_FROM_PATH):
                     os.remove(self.COUNTS_FROM_PATH)
