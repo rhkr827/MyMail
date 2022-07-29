@@ -11,7 +11,7 @@
   - If I have a time, will make a UI,maybe PyQT, tool support fuctions creating filter or automatic classification
 
 ## Development environment
-
+- OS : Windows   
 - IDE : Visual Studio Code
 - Function : Python
 - API : Google API OAuth, Gmail API
