@@ -11,7 +11,7 @@
   - 시간이 된다면, GUI(아마도 PyQT)로 제작하여 필터 또는 자동 분류가 가능하도록 하게도 만들 계획
 
 ## 개발 환경
-
+- OS : Windows   
 - IDE : Visual Studio Code
 - Function : Python
 - API : Google API OAuth, Gmail API
