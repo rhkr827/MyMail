@@ -18,15 +18,15 @@ def gmail_authenticate():
 
     auth_path = str(settings['google_auth_path'])
 
-    if os.path.exists(auth_path + 'token.json'):
-        creds = Credentials.from_authorized_user_file(auth_path + 'token.json', SCOPES)
+    if os.path.exists('../MyAuth/token.json'):
+        creds = Credentials.from_authorized_user_file('../MyAuth/token.json', SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(auth_path + 'token.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file('../MyAuth/client_secret.json', SCOPES)
             creds = flow.run_local_server(port=0)
-        with open(auth_path + 'token.json', 'w') as token:
+        with open('../MyAuth/token.json', 'w') as token:
             token.write(creds.to_json())
 
     return build('gmail', 'v1', credentials=creds)

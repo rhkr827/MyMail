@@ -10,9 +10,9 @@ class init_settings:
         self.logger = None
         self.webserver = None
         self.oauth = None
-        self.initilize()
+        self.initialize()
 
-    def initilize(self):
+    def initialize(self):
         # create folders if not exist
         if not os.path.exists('logs'):
             os.mkdir('logs')
